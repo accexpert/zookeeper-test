@@ -19,8 +19,9 @@ public class StartMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(StartMain.class);
 
     public static void main(String[] args) throws KeeperException, InterruptedException {
-        //new StartMain().testExistsNode();
-        new StartMain().testEphefemeralNode();
+        new StartMain().testExistsNode();
+//        new StartMain().testEphefemeralNode();
+//        new StartMain().testCreateNode();
     }
 
     private void testCreateNode() throws KeeperException, InterruptedException {
@@ -60,7 +61,7 @@ public class StartMain {
         printStatisticsStructure(stat);
         LOGGER.info("Waiting...");
         //sleep the thread for 10s in order to check from another session of ZK Cli if the node exists and then removed.
-        Thread.sleep(10000);
+        Thread.sleep(30000);
         LOGGER.info("Done waiting. Close session");
         disconnectZookeeperServer(context);
     }
@@ -73,7 +74,19 @@ public class StartMain {
      * reconnects quickly, the ephemeral znode exists set by the old session.
      */
     private void testEphefemeralNodeIssue1() throws KeeperException, InterruptedException {
-
+        ApplicationContext context = startSpring();
+        connectZookeeperServer(context);
+        ZookeeperOperationHandler operationHandler = context.getBean("zookeeperOperationHandler", ZookeeperOperationHandler.class);
+        LOGGER.info("Node created: "+operationHandler.createNewNode(NodeTypes.ephemeral, Constants.ROOT_NODE_NAME, createModel()));
+        Stat stat = operationHandler.checkIfNodeExists(Constants.ROOT_NODE_NAME);
+        printStatisticsStructure(stat);
+        LOGGER.info("Waiting...");
+        //sleep the thread for 10s in order to check from another session of ZK Cli if the node exists and then removed.
+        Thread.sleep(10000);
+        LOGGER.info("Done waiting. Close session");
+        //now the node can be seen for a limited period of time using ZK Cli of running the program again
+        //and using testExistsNode() method
+        //the node will be deleted by ZK when the server will notice that the client is no longer online
     }
 
     // UTILS METHODS
