@@ -11,18 +11,20 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * EnableScheduling was used to for the Spring to run in order to test some watchers.
+ * It's not necessary if DataChangeWatcher is implemented.
+ */
 @Component
 //@EnableScheduling
 public class ZookeeperOperationHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperOperationHandler.class);
     private ZookeeperConnectionHandler connection;
     private ZookeeperDataSerializer dataSerializer;
-    private DataChangeWatcher dataChangeWatcher;
 
     @Autowired
-    public ZookeeperOperationHandler(ZookeeperConnectionHandler connection, ZookeeperDataSerializer dataSerializer, DataChangeWatcher dataChangeWatcher) {
+    public ZookeeperOperationHandler(ZookeeperConnectionHandler connection, ZookeeperDataSerializer dataSerializer) {
         this.connection = connection;
-        this.dataSerializer = dataSerializer;
         this.dataSerializer = dataSerializer;
         LOGGER.info(this.getClass().getSimpleName()+" created.");
     }
@@ -34,16 +36,35 @@ public class ZookeeperOperationHandler {
         return connection.getZooKeeper().create(nodeName, dataSerial.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, getCreateMode(nodeType));
     }
 
+    /**
+     * The delete node send as version of the node zero.
+     * Using zero as version we bypass the version check which should
+     * deny the delete if the version we sent is lower than the current
+     * version of the node
+     * @param nodeName
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     public void deleteNode(String nodeName) throws KeeperException, InterruptedException {
         connection.getZooKeeper().delete(nodeName, 0);
     }
 
+    public void deleteNode(String nodeName, int version) throws KeeperException, InterruptedException {
+        connection.getZooKeeper().delete(nodeName, version);
+    }
+
     public boolean setWatch() {
         try {
-            connection.getZooKeeper().exists("/*", new Watcher() {
+            connection.getZooKeeper().exists("/", new Watcher() {
                 @Override
                 public void process(WatchedEvent watchedEvent) {
                     LOGGER.info("--- "+watchedEvent.getPath());
+                }
+            });
+            connection.getZooKeeper().getChildren("/", new Watcher() {
+                @Override
+                public void process(WatchedEvent watchedEvent) {
+                    LOGGER.info(watchedEvent.getType().toString());
                 }
             });
         } catch (KeeperException e) {
@@ -68,8 +89,8 @@ public class ZookeeperOperationHandler {
         return data;
     }
 
-    public Stat setData(String nodeName, BaseZookeeperModel data) throws KeeperException, InterruptedException {
-        return connection.getZooKeeper().setData(nodeName, dataSerializer.serializeData(data).getBytes(), 0);
+    public Stat setData(String nodeName, BaseZookeeperModel data, int version) throws KeeperException, InterruptedException {
+        return connection.getZooKeeper().setData(nodeName, dataSerializer.serializeData(data).getBytes(), version);
     }
 
 //    @Scheduled(fixedDelay = 1000*60*60)

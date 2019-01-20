@@ -56,6 +56,9 @@ public class ZookeeperConnectionHandler {
     }
 
     public ZooKeeper getZooKeeper() {
+        if(!isConnected) {
+            connect();
+        }
         return zooKeeper;
     }
 }

@@ -1,9 +1,13 @@
 package com.acc.zookeeper.config;
 
+import com.acc.zookeeper.handlers.DataChangeWatcher;
+import com.acc.zookeeper.handlers.ZookeeperConnectionHandler;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -18,12 +22,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 public class ApplicationConfig {
 
     @Bean
-    public TaskExecutor threadPoolTaskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setThreadNamePrefix("");
-        executor.setMaxPoolSize(1);
-        executor.setCorePoolSize(1);
-        executor.initialize();
-        return executor;
+    public TaskExecutor threadTaskExecutor() {
+        return new SimpleAsyncTaskExecutor();
+    }
+
+    @Bean
+    public CommandLineRunner dataChangeWatcherThread(TaskExecutor threadTaskExecutor, final ZookeeperConnectionHandler zookeeperConnectionHandler) {
+        return strings -> threadTaskExecutor.execute(new DataChangeWatcher(zookeeperConnectionHandler));
     }
 }
