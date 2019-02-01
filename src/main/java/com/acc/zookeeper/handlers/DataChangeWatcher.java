@@ -78,12 +78,11 @@ public class DataChangeWatcher implements Runnable {
                 try {
                     String path = watchedEvent.getPath();
                     LOGGER.info("Change: " + watchedEvent.getPath()+"; event type: "+watchedEvent.getType());
-                    List<String> children = connectionHandler.getZooKeeper().getChildren(path, false);
-                    for(String a: children) {
-                        Stat stat = connectionHandler.getZooKeeper().exists("/"+a, false);
-                        Utils.printStatisticsStructure(stat, "/"+a);
-                    }
-
+//                    List<String> children = connectionHandler.getZooKeeper().getChildren(path, false);
+//                    for(String a: children) {
+//                        Stat stat = connectionHandler.getZooKeeper().exists("/"+a, false);
+//                        Utils.printStatisticsStructure(stat, "/"+a);
+//                    }
                     if(watchedEvent.getType().equals(Event.EventType.NodeChildrenChanged)) {
                         setWatcherOnChildrens(path);
                     } else if (watchedEvent.getType().equals(Event.EventType.NodeDataChanged)) {
